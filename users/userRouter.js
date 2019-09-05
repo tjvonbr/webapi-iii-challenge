@@ -2,18 +2,18 @@ const express = require('express');
 
 // Import Data
 const UserData = require('./userDb');
+const PostData = require('../posts/postDb');
 let nextId = 10;
 
 const router = express.Router();
 router.use(express.json());
 
-router.post('/', (req, res) => {
-  const newUser = req.body;
-  const newUserId = nextId++;
+router.post('/', validateUser, (req, res) => {
+  const name = req.body;
 
-  Data.insert(newUser)
+  UserData.insert(name)
     .then(user => {
-      res.status(201).json(user)
+      res.status(201).json(name)
     })
     .catch(error => {
       res.status(500).json({ error: "There was an error adding a user." })
@@ -21,16 +21,15 @@ router.post('/', (req, res) => {
 });
 
 router.post('/:id/posts', (req, res) => {
-  const { id } = req.params;
-  const newPost = req.body;
-  newPost.user_id = id;
+  const post = req.body
 
-  UserData.insert(newPost)
+  PostData.insert(post)
     .then(post => {
-      res.status(201).json(post)
+      res.status(201).json(post);
     })
     .catch(err => {
-      res.status(500).json({ error: "There was an error while adding the post." })
+      console.log(err);
+      res.status(500).json({ error: "Error adding post." })
     })
 });
 
@@ -44,28 +43,23 @@ router.get('/', (req, res) => {
     })
 });
 
-router.get('/:id', (req, res) => {
-  const { id } = req.params;
-
-  UserData.getById(id)
-    .then(name => {
-      res.status(200).json(name)
-    })
-    .catch(error => {
-      res.status(500).json({ error: "There was an error uploading this individual." })
-    })
+router.get('/:id', validateUserId, (req, res) => {
+  console.log("GET USER")
+  res.status(200).json(req.user)
 });
 
-router.get('/:id/posts', (req, res) => {
+router.get('/:id/posts', validateUserId, (req, res) => {
+  console.log("GET USER/'S POSTS")
   const { id } = req.params;
 
-  UserData.getById(id)
+  UserData.getUserPosts(id)
     .then(posts => {
       res.status(200).json(posts)
     })
     .catch(err => {
-      res.status(500).json({ error: "There was a problem fetching this user/'s posts"})
-    })
+      console.log(err);
+      res.status(500).json({ error: "There was an error getting this user/'s posts."})
+    });
 });
 
 router.delete('/:id', (req, res) => {
@@ -80,32 +74,55 @@ router.delete('/:id', (req, res) => {
     })
 });
 
-router.put('/:id', (req, res) => {
+router.put('/:id', validateUserId, (req, res) => {
   const { id } = req.params;
   const { name } = req.body;
 
   UserData.update(id, { name })
     .then(updated => {
       res.status(200).json(updated)
-    })
-    .catch(err => {
-      console.log(err)
-      res.status(500).json({ error: "There was a problem updating this user." })
-    })
+    });
 });
 
 //custom middleware
 
-const validateUserId = function (req, res, next) {
+function validateUserId(req, res, next) {
+  const { id } = req.params;
 
+  UserData.getById(id)
+    .then(user => {
+      if (user) {
+        req.user = user;
+        next();
+      } else {
+        res.status(404).json({ error: "A user with this ID does not exist." })
+      }
+    })
 };
 
 function validateUser(req, res, next) {
+  const { name } = req.body;
 
+  if (!name) {
+    return res.status(400).json({ error: "A name is required."})
+  }
+  if (typeof name !== "string") {
+    return res.status(400).json({ error: "A name must be a string." })
+  }
+  next();
 };
 
 function validatePost(req, res, next) {
+  const { id: user_id } = req.params;
+  const { text } = req.body;
 
+  if (!text) {
+    return res.status(400).json({ error: "Post requires a body." })
+  }
+  if (!text) {
+    return res.status(400).json({ error: "Post requires text." })
+  }
+  next();
 };
 
 module.exports = router;
