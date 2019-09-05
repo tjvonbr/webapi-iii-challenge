@@ -1,8 +1,7 @@
 const express = require('express');
-const app = express();
 
 // Import Data
-const Data = require('./userDb');
+const UserData = require('./userDb');
 let nextId = 10;
 
 const router = express.Router();
@@ -26,7 +25,7 @@ router.post('/:id/posts', (req, res) => {
   const newPost = req.body;
   newPost.user_id = id;
 
-  Data.insert(newPost)
+  UserData.insert(newPost)
     .then(post => {
       res.status(201).json(post)
     })
@@ -36,7 +35,7 @@ router.post('/:id/posts', (req, res) => {
 });
 
 router.get('/', (req, res) => {
-  Data.get()
+  UserData.get()
     .then(names => {
       res.status(200).json(names)
     })
@@ -48,7 +47,7 @@ router.get('/', (req, res) => {
 router.get('/:id', (req, res) => {
   const { id } = req.params;
 
-  Data.getById(id)
+  UserData.getById(id)
     .then(name => {
       res.status(200).json(name)
     })
@@ -60,7 +59,7 @@ router.get('/:id', (req, res) => {
 router.get('/:id/posts', (req, res) => {
   const { id } = req.params;
 
-  Data.getById(id)
+  UserData.getById(id)
     .then(posts => {
       res.status(200).json(posts)
     })
@@ -72,7 +71,7 @@ router.get('/:id/posts', (req, res) => {
 router.delete('/:id', (req, res) => {
   const { id } = req.params;
 
-  Data.remove(id)
+  UserData.remove(id)
     .then(removed => {
       res.status(200).json(removed)
     })
@@ -85,7 +84,7 @@ router.put('/:id', (req, res) => {
   const { id } = req.params;
   const { name } = req.body;
 
-  Data.update(id, { name })
+  UserData.update(id, { name })
     .then(updated => {
       res.status(200).json(updated)
     })
